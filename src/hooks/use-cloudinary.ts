@@ -1,25 +1,48 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { UploadVideoResponse } from "../models/upload-video-response";
+import { generateContent } from "../services/gemini";
 
 interface UseCloudinaryWidgetProps {
   cloudName: string;
   uploadPreset: string;
-  onSuccess?: (result: any) => void;
-  onError?: (error: any) => void;
+  geminiApiKey: string | null;
+  onSuccess?: (
+    result: /* eslint-disable-next-line @typescript-eslint/no-explicit-any */ any,
+  ) => void;
+  onError?: (
+    error: /* eslint-disable-next-line @typescript-eslint/no-explicit-any */ any,
+  ) => void;
 }
 
 export function useCloudinaryWidget({
   cloudName,
   uploadPreset,
+  geminiApiKey,
   onSuccess,
   onError,
 }: UseCloudinaryWidgetProps) {
-  const cloudinaryRef = useRef<any>(null);
-  const widgetRef = useRef<any>(null);
+  const cloudinaryRef =
+    useRef</* eslint-disable-next-line @typescript-eslint/no-explicit-any */ any>(
+      null,
+    );
+  const widgetRef =
+    useRef</* eslint-disable-next-line @typescript-eslint/no-explicit-any */ any>(
+      null,
+    );
   const [isLoaded, setIsLoaded] = useState(false);
 
   const publicIdRef = useRef<string | null>(null);
   const transcriptionUrlRef = useRef<string | null>(null);
+  const [viralMomentUrl, setViralMomentUrl] = useState<string | null>(null);
+  const [status, setStatus] = useState<string | null>(null);
+
+  const geminiApiKeyRef = useRef(geminiApiKey);
+
+  useEffect(() => {
+    geminiApiKeyRef.current = geminiApiKey;
+  }, [geminiApiKey]);
+
+  console.log("geminiApiKey", geminiApiKey);
 
   const waitForTranscription = useCallback(
     async (videoId?: string) => {
@@ -53,7 +76,7 @@ export function useCloudinaryWidget({
               `Erro ao buscar transcrição (Status: ${response.status})`,
             );
           }
-        } catch (error: any) {
+        } catch (error: /* eslint-disable-next-line @typescript-eslint/no-explicit-any */ any) {
           console.log(`Tentativa ${attempt} falhou:`, error.message);
         }
 
@@ -84,7 +107,7 @@ export function useCloudinaryWidget({
             uploadPreset,
           },
           async (
-            error: any,
+            error: /* eslint-disable-next-line @typescript-eslint/no-explicit-any */ any,
             result: { event: string; info: UploadVideoResponse },
           ) => {
             if (!error && result && result.event === "success") {
@@ -93,16 +116,30 @@ export function useCloudinaryWidget({
                 publicIdRef.current = public_id;
 
                 try {
+                  setStatus("Aguardando transcrição do vídeo...");
                   const isTranscriptionReady =
                     await waitForTranscription(public_id);
-                  console.log(isTranscriptionReady);
+
+                  if (!isTranscriptionReady) {
+                    throw new Error("Transcrição não encontrada");
+                  }
+
+                  setStatus("Analisando com Gemini AI...");
+                  const viralMoment = await getViralMoment();
+                  const newViralMomentUrl = `https://res.cloudinary.com/${cloudName}/video/upload/${viralMoment}/${public_id}.mp4`;
+                  setViralMomentUrl(newViralMomentUrl);
+
+                  setStatus("Corte viral gerado com sucesso!");
+
                   onSuccess(result);
                 } catch (err) {
                   console.error(err);
+                  setStatus("Erro durante o processamento do vídeo.");
                   if (onError) onError(err);
                 }
               }
             } else if (error) {
+              setStatus("Erro no upload do Cloudinary.");
               if (onError) onError(error);
             }
           },
@@ -135,6 +172,7 @@ export function useCloudinaryWidget({
         if (onError) onError(new Error("Failed to load script"));
       });
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [cloudName, uploadPreset, onSuccess, onError, waitForTranscription]);
 
   const openWidget = () => {
@@ -151,9 +189,52 @@ export function useCloudinaryWidget({
     return data;
   };
 
-  const getViralMoment = async () => {
+  const getViralMoment = async (retries = 3, delayMs = 2000) => {
+    const currentApiKey = geminiApiKeyRef.current;
+    if (!currentApiKey) {
+      throw new Error("Chave Gemini API não fornecida");
+    }
+
     const transcription = await getTranscription();
+    const prompt = `
+        Role: You are a professional video editor specializing in viral content.
+        Task: Analyze the transcription below and identify the most engaging, funny, or surprising segment.
+        Constraints:
+        1. Duration: Minimum 30 seconds, Maximum 60 seconds.
+        2. Format: Return ONLY the start and end string for Cloudinary. Format: so_<start_seconds>,eo_<end_seconds>
+        3. Examples: "so_10,eo_20" or "so_12.5,eo_45.2"
+        4. CRITICAL: Do not use markdown, do not use quotes, do not explain. Return ONLY the raw string.
+
+        Transcription:
+        ${transcription}
+`;
+    for (let attempt = 1; attempt <= retries; attempt++) {
+      try {
+        const data = await generateContent(prompt, currentApiKey);
+        const rawText = data?.replace(/```/g, "").replace(/json/g, "").trim();
+
+        return rawText;
+      } catch (error) {
+        console.error(
+          `Erro ao obter momento viral com Gemini (Tentativa ${attempt}/${retries}):`,
+          error,
+        );
+        if (attempt === retries) {
+          throw new Error(
+            "Falha ao se conectar com o Gemini após várias tentativas.",
+          );
+        }
+        await new Promise((resolve) => setTimeout(resolve, delayMs));
+      }
+    }
   };
 
-  return { openWidget, isLoaded, waitForTranscription };
+  return {
+    openWidget,
+    isLoaded,
+    waitForTranscription,
+    getTranscription,
+    viralMomentUrl,
+    status,
+  };
 }

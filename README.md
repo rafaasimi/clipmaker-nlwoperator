@@ -1,73 +1,87 @@
-# React + TypeScript + Vite
+<div align="center">
+  <img src=".github/clipmaker.jpg" alt="ClipMaker AI" />
+  
+  <br />
+  <br />
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+  <h1>🎬 ClipMaker AI</h1>
+  <p>
+    <strong>Sua estratégia de Shorts no piloto automático.</strong><br/>
+    Extraia os momentos mais virais de vídeos longos usando modelos de IA avançados. Crie, edite e engaje com a velocidade da luz.
+  </p>
+</div>
 
-Currently, two official plugins are available:
+---
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+## 🚀 Sobre o Projeto
 
-## React Compiler
+O **ClipMaker AI** é uma aplicação focada em facilitar a criação de conteúdo para redes sociais curtas (como Reels, Shorts e TikTok). Através da união de Inteligência Artificial com o poder de processamento em nuvem, a plataforma recebe o upload de vídeos longos, transcreve seu conteúdo, identifica e extrai automaticamente a porção com maior potencial viral.
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+### ✨ Funcionalidades
 
-## Expanding the ESLint configuration
+- **Design Premium & Animações**: Interface desenvolvida com Tailwind CSS acompanhada de incríveis microinterações usando GSAP (agora com Glassmorphism elegante).
+- **Upload Eficiente**: Utiliza o ecossistema e SDK do `Cloudinary` para tratar uploads pesados e gerar a transcrição do áudio do vídeo longo.
+- **Análise Semântica via IA**: Usa a inteligência artificial generativa **Gemini** (Google GenAI) para analisar a transcrição gerada pelo Cloudinary e encontrar o trecho exato e envolvente (com duração de 30s a 60s) que garante o maior engajamento.
+- **Preview Dinâmico**: Visualizador integrado do corte selecionado para pré-visualização.
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+## 🛠️ Tecnologias Utilizadas
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+A stack principal deste projeto é composta por ferramentas modernas e em alta no ecossistema de desenvolvimento web:
 
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
+- **[React 19](https://react.dev/)** + **[TypeScript](https://www.typescriptlang.org/)** — Componentização tipada e segurança.
+- **[Vite](https://vitejs.dev/)** — Build tool ultra veloz.
+- **[Tailwind CSS v4](https://tailwindcss.com/)** — Estilização utilitária focada em alta performance.
+- **[GSAP](https://gsap.com/)** + `@gsap/react` — Animações fluidas entre elementos na árvore principal.
+- **[Lucide React](https://lucide.dev/)** — Biblioteca robusta de ícones.
+- **[@google/genai](https://ai.google.dev/)** — Integração direta para consumir os modelos do Gemini API 2.5 Flash.
+- **[Cloudinary](https://cloudinary.com/)** — Tratamento de media files, uploads na plataforma global e processamento massivo.
 
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+## ⚙️ Configurações (Ambiente)
+
+O projeto requer que você configure os dados de autenticação e comunicação das APIs externas.
+
+### 1. Renomeie o arquivo de exemplo
+Existe um arquivo `.env.example` na raiz do projeto. Você deve criar uma cópia dele e renomeá-la para `.env.local` (este arquivo está fora do versionamento do Github para maior segurança).
+
+### 2. Preencha o `.env.local`
+Você precisa criar uma conta gratuita no [Cloudinary](https://cloudinary.com/) e inserir no seu `.env.local` as seguintes chaves (obtidas no seu Dashboard de `Upload preset` e status gerais):
+
+```env
+VITE_CLOUDINARY_CLOUD_NAME="substitua-pelo-seu-cloud-name"
+VITE_CLOUDINARY_UPLOAD_PRESET="substitua-pelo-seu-upload-preset"
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+> **Atenção:** Certifique-se de que o seu **Upload Preset** no Cloudinary está sendo configurado como "Unsigned" e ativou o campo de geração automática de transcrição *(Google Speech-to-Text / AssemblyAI dependent add-ons)*.
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+### 3. Integração do Gemini AI
+Para o Gemini, a API Key **não é necessária no arquivo `.env`**. Ela foi construída para dar uma experiência dinâmica, e o próprio usuário insere o Token dela ao invés de deixarmos ela acoplada e hard-coded.
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-```
+## 💻 Como Executar na Sua Máquina
+
+Tendo os pré-requisitos fundamentais em mãos (como Node e `pnpm`):
+
+1. **Clone o repositório**
+   ```bash
+   git clone https://github.com/seugithub/clipmaker-nlwoperator.git
+   cd clipmaker-nlwoperator
+   ```
+
+2. **Instale as dependências**
+   Recomendado utilizar o gerenciador de pacotes **pnpm**:
+   ```bash
+   pnpm install
+   ```
+
+3. **Inicie o Ambiente de Desenvolvimento**
+   Subindo a engine pelo Vite:
+   ```bash
+   pnpm dev
+   ```
+
+4. **Acesse no Navegador**
+   Por padrão, será inicializado em:
+   [http://localhost:5173](http://localhost:5173)
+
+---
+
+Desenvolvido com 💚 sob um design altamente minimalista e poderoso.
